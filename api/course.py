@@ -6,18 +6,28 @@ import os
 import json
 router = APIRouter()
 
+
+class CourseRequest(BaseModel):
+    topic: str
+
+
 class Syllabus(BaseModel):
     module: str
     topics: List[str]
     difficulty: Literal["beginner", "intermediate", "advanced"]
     prerequisites: List[str]
-    
+
 class Content(BaseModel):
     topic: str
     content: str
     example: str
     difficulty: Literal["beginner", "intermediate", "advanced"]
     next_topic: List[str]
+
+class Quiz(BaseModel):
+    question: str
+    options: List[str]
+    answer: str
 # Initialize OpenAI client
 client = OpenAI(
     base_url="https://api.studio.nebius.ai/v1/",
@@ -121,11 +131,91 @@ def generate_content(topic):
         except Exception as e:
             print(f"Error parsing JSON: {e}")  # Handle JSON parsing errors
 
-            
+
+def generate_quiz(topic):
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "You are a teaching assistant specialized in creating quizzes for cybersecurity courses. "
+                "Given a topic, generate 5 quiz questions with multiple choice options and correct answers. "
+                """respond in this format {
+    "questions": [
+        {
+            "question": "What is the purpose of a firewall?",
+            "options": [
+                "To protect against malware",
+                "To monitor network traffic",
+                "To filter incoming and outgoing traffic",
+                "To secure user data"
+            ],
+            "answer": "To filter incoming and outgoing traffic"
+        }
+    ]
+}
+Please generate exactly 5 questions."""
+            ),
+        },
+        {"role": "user", "content": f"Generate 5 quiz questions on {topic}"},
+    ]
+
+    completion = client.chat.completions.create(
+        model="meta-llama/Meta-Llama-3.1-405B-Instruct",
+        messages=messages,
+        max_tokens=1000,  # Increase token limit for multiple questions
+        temperature=0.7,
+        extra_body={
+            "guided_json": {
+                "type": "object",
+                "properties": {
+                    "questions": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "question": {"type": "string"},
+                                "options": {
+                                    "type": "array",
+                                    "items": {"type": "string"},
+                                    "minItems": 4,
+                                    "maxItems": 4,
+                                },
+                                "answer": {"type": "string"},
+                            },
+                            "required": ["question", "options", "answer"],
+                        },
+                        "minItems": 5,
+                        "maxItems": 5,
+                    }
+                },
+            }
+        },
+    )
+
+    output = completion.choices[0].message
+    if output.refusal:
+        raise ValueError(output.refusal)
+    elif output.content:
+        try:
+            output_json = json.loads(output.content)
+            if len(output_json.get("questions", [])) != 5:
+                raise ValueError("Invalid number of questions generated")
+            return output_json
+        except Exception as e:
+            raise ValueError(f"Error parsing quiz JSON: {e}")
+    return None
+
+
 @router.post("/course", response_model=None)
-def generate_course(
+def generate_course(request: CourseRequest):
+    content = generate_content(request.topic)
+    return content
+
+
+@router.post("/quiz", response_model=None)
+def generate_questions(
     response: Response,
     topic: str,
 ):
-    content = generate_content(topic)
-    return content
+    quiz = generate_quiz(topic)
+    return quiz
