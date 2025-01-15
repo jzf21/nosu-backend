@@ -22,7 +22,10 @@ app = FastAPI(title="Bucket List API")
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://nosu-cyber-sec.vercel.app/"],  # Adjust this to your needs
+    allow_origins=[
+        "https://nosu-cyber-sec.vercel.app/",
+        "http://localhost:3000"
+    ],  # Adjust this to your needs
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
