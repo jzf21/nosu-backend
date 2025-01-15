@@ -26,6 +26,7 @@ app.add_middleware(
     allow_origins=[
         "nosu-o6l1.vercel.app",
         "https://nosu-cyber-sec.vercel.app/",
+        "http://localhost:3000",
     ],  # Adjust this to your needs
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # Specify methods
