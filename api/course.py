@@ -214,6 +214,7 @@ def generate_course(request: CourseRequest):
 
 @router.post("/quiz", response_model=None)
 def generate_questions(
+    request: CourseRequest,
     response: Response,
     topic: str,
 ):
