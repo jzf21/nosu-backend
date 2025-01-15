@@ -4,6 +4,7 @@ from typing import List, Literal
 from openai import OpenAI
 import os
 import json
+
 router = APIRouter()
 
 
@@ -17,6 +18,7 @@ class Syllabus(BaseModel):
     difficulty: Literal["beginner", "intermediate", "advanced"]
     prerequisites: List[str]
 
+
 class Content(BaseModel):
     topic: str
     content: str
@@ -24,15 +26,19 @@ class Content(BaseModel):
     difficulty: Literal["beginner", "intermediate", "advanced"]
     next_topic: List[str]
 
+
 class Quiz(BaseModel):
     question: str
     options: List[str]
     answer: str
+
+
 # Initialize OpenAI client
 client = OpenAI(
     base_url="https://api.studio.nebius.ai/v1/",
     api_key=os.environ.get("NEBIUS_API_KEY"),
 )
+
 
 def generate_syllabus():
     messages = [
@@ -105,10 +111,7 @@ def generate_content(topic):
         },
         {
             "role": "user",
-            "content": (
-                "detailed info on" + topic
-                
-            ),
+            "content": ("detailed info on" + topic),
         },
     ]
 
@@ -213,10 +216,13 @@ def generate_course(request: CourseRequest):
 
 
 @router.post("/quiz", response_model=None)
-def generate_questions(
-    request: CourseRequest,
-    response: Response,
-    topic: str,
-):
-    quiz = generate_quiz(topic)
-    return quiz
+def generate_questions(request: CourseRequest):
+    try:
+        quiz = generate_quiz(
+            request.topic
+        )  # Use request.topic instead of CourseRequest.topic
+        if not quiz:
+            raise HTTPException(status_code=400, detail="Failed to generate quiz")
+        return quiz
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
