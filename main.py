@@ -1,19 +1,10 @@
-from fastapi import FastAPI, HTTPException, Depends, status
-from sqlalchemy.orm import Session
-
-from typing import List, Optional, Annotated
-from enum import Enum
-import database.models as models
-import database.schemas as schemas
-
 from database.database import SessionLocal, engine
 from datetime import datetime
 from fastapi.security import OAuth2PasswordRequestForm
-from api import auth, course
+from api import auth,course
 from dependencies import get_current_user
 from dotenv import load_dotenv
-
-load_dotenv()
+load_dotenv()  
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -24,8 +15,8 @@ app = FastAPI(title="Bucket List API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "nosu-o6l1.vercel.app",
-        "https://nosu-cyber-sec.vercel.app/",
+        "https://nosu-o6l1.vercel.app",
+        "https://nosu-cyber-sec.vercel.app",
         "http://localhost:3000",
     ],  # Adjust this to your needs
     allow_credentials=True,
